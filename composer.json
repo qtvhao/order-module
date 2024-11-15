@@ -1,0 +1,13 @@
+{
+    "name": "qtvhao/order-module",
+    "description": "Order module for managing order lifecycle",
+    "authors": [
+        {
+            "name": "willwilson",
+            "email": "qtvhao@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.3.13"
+    }
+}
