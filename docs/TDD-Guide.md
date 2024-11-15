@@ -1,6 +1,6 @@
 ## Tóm tắt quá trình TDD cho module này
 
-### 1. Domain Layer
+### I. Domain Layer
 
 #### Value Objects
 
@@ -33,7 +33,7 @@
 2. Xây dựng Exceptions:
     - Xây dựng các exception cần thiết.
 
-### 2. Application Layer
+### II. Application Layer
 
 #### Interfaces và Use Cases
 
@@ -57,7 +57,7 @@
 2. Xây dựng Exceptions:
     - Hoàn thiện exception này.
 
-### 3. Infrastructure Layer
+### III. Infrastructure Layer
 
 #### Persistence
 
@@ -88,7 +88,7 @@
 2. Xây dựng Policies và Providers:
     - Hoàn thiện policies và providers cho đến khi tất cả test pass.
 
-### 4. Presentation Layer
+### IV. Presentation Layer
 
 #### Requests và Resources
 
@@ -104,8 +104,9 @@
 2. Cài đặt Routes:
     - Định nghĩa các endpoint trong file routes cho đến khi test pass.
 
-### 5. Testing
+### V. Testing
 
 Khi toàn bộ code đã được xây dựng bằng TDD, thực hiện các bài Integration Test và End-to-End Test:
 1. Integration Tests: Test tích hợp giữa các lớp để kiểm tra sự tương tác giữa domain, application, và infrastructure.
 2. End-to-End Tests: Kiểm tra luồng dữ liệu từ API, qua business logic, đến database để đảm bảo hệ thống hoạt động như mong đợi.
+
