@@ -107,3 +107,68 @@ Order/
 ├── composer.json                              # Composer dependencies
 └── README.md                                  # Documentation for the module
 ```
+
+This Order module structure adheres to a clean and scalable design using principles like DDD, CQRS, and Event-Driven Architecture, making it robust for handling complex business requirements. Here’s an explanation of its key aspects:
+
+### 1. Domain Layer
+
+The Domain layer focuses purely on business logic and rules without dependencies on external services.
+
+- **Aggregates**: Encapsulate related entities and enforce business invariants.
+    - *Example*: `OrderAggregate` manages the lifecycle and rules of an order.
+- **Entities**: Represent domain concepts with identity.
+    - *Example*: `OrderItem` holds details about individual items in an order.
+- **Value Objects**: Immutable and value-based, such as `Money` for price or `Address`.
+- **Services**: Contain logic that doesn’t naturally belong to entities or aggregates, such as `OrderCalculationService`.
+- **Events**: Capture state changes, like `OrderCreatedEvent`. Events are stored and published via `EventStore`.
+- **Exceptions**: Handle business-specific errors.
+
+### 2. Application Layer
+
+The Application layer orchestrates domain and infrastructure layers.
+
+- **Use Cases**: Implement specific operations with clear intent. Commands (write) and queries (read) are separated:
+    - **Commands**: `CreateOrderCommandRequest` triggers `CreateOrderHandler`.
+    - **Queries**: `GetOrderRequest` is processed by `GetOrderHandler`.
+- **Services**: Perform application-level coordination.
+    - *Example*: `CalculateOrderTotalService` uses domain services and repositories.
+- **Interfaces**: Define contracts for infrastructure dependencies (e.g., repositories, event bus).
+- **Event Handlers**: Respond to domain events, keeping the system reactive.
+- **Exceptions**: Handle application-layer-specific issues like missing orders.
+
+### 3. Infrastructure Layer
+
+The Infrastructure layer implements external dependencies and technical concerns.
+
+- **Persistence**: Separates command (e.g., event-sourced) and query (e.g., MySQL read models) storage mechanisms.
+- **Events**: Implements an event bus, using Kafka for distributed messaging. Producers publish domain events, and consumers handle them.
+- **Workers**: Kafka consumers that continuously process events.
+- **Controllers**: API and web endpoints.
+    - *Example*: `OrderController` for server-side logic, and `OrderApiController` for REST API.
+- **Policies**: Enforce authorization rules, ensuring secure access.
+- **Providers**: Manage dependency injection setup for repositories and the event bus.
+
+### 4. Presentation Layer
+
+The Presentation layer deals with user-facing interactions.
+
+- **Requests**: Handle HTTP input validation for creating or updating orders.
+- **Resources**: Format API responses (e.g., transforming domain objects into JSON).
+- **Routes**: Define API endpoints in `api.php`.
+
+### 5. Testing
+
+The `tests` directory includes:
+
+- **Unit Tests**: Test isolated pieces of code (e.g., entities, value objects).
+- **Integration Tests**: Test interactions between multiple layers.
+- **End-to-End Tests**: Simulate real-world scenarios across the entire module.
+
+### Key Advantages
+
+1. **Separation of Concerns**: DDD isolates domain logic, and CQRS decouples reading from writing.
+2. **Scalability**: Event-driven architecture supports asynchronous processing and microservices.
+3. **Testability**: Layered design makes it easy to test individual components.
+4. **Maintainability**: Clear folder structure and use of interfaces simplify future changes.
+
+By following this modular structure, the Order module can evolve independently, ensuring flexibility and maintainability as business requirements change.
