@@ -14,8 +14,17 @@ Order/
 │   │   │   └── OrderItem.php
 │   │   ├── ValueObjects/                      # Immutable value objects
 │   │   │   ├── Address.php
+│   │   │   ├── DeliveryDate.php
+│   │   │   ├── Discount.php
+│   │   │   ├── EmailAddress.php
+│   │   │   ├── FullName.php
+│   │   │   ├── IPAddress.php
 │   │   │   ├── Money.php
-│   │   │   └── OrderStatus.php
+│   │   │   ├── OrderStatus.php
+│   │   │   ├── PhoneNumber.php
+│   │   │   ├── Quantity.php
+│   │   │   ├── SKU.php
+│   │   │   └── TaxId.php
 │   │   ├── Services/                          # Pure domain services
 │   │   │   └── OrderCalculationService.php
 │   │   ├── Events/                            # Domain events and Event Store
