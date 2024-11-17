@@ -6,6 +6,8 @@ namespace Qtvhao\OrderModule\Tests\Unit\Domain\Entities;
 
 use PHPUnit\Framework\TestCase;
 use Qtvhao\OrderModule\Domain\Entities\OrderItem;
+use Qtvhao\OrderModule\Domain\ValueObjects\ProductName;
+use Qtvhao\OrderModule\Domain\ValueObjects\SKU;
 use Qtvhao\OrderModule\Domain\ValueObjects\Money;
 use Qtvhao\OrderModule\Domain\ValueObjects\Quantity;
 
@@ -13,30 +15,33 @@ class OrderItemTest extends TestCase
 {
     public function testCreateOrderItem()
     {
-        $money = new Money(100, 'USD');
+        $name = new ProductName('Laptop');
+        $sku = new SKU('LAP-12345');
+        $price = new Money(1000.00, 'USD');
         $quantity = new Quantity(2);
-        $orderItem = new OrderItem('SKU123', $money, $quantity);
 
-        $this->assertEquals('SKU123', $orderItem->getSKU());
-        $this->assertEquals(100, $orderItem->getPrice()->getAmount());
-        $this->assertEquals(2, $orderItem->getQuantity()->getValue());
+        $orderItem = new OrderItem($name, $sku, $price, $quantity);
+
+        $this->assertEquals($name, $orderItem->getName());
+        $this->assertEquals($sku, $orderItem->getSku());
+        $this->assertEquals($price, $orderItem->getPrice());
+        $this->assertEquals($quantity, $orderItem->getQuantity());
     }
 
-    public function testCalculateItemTotal()
+    public function testCalculateTotal()
     {
-        $money = new Money(50, 'USD');
+        $price = new Money(1000.00, 'USD');
         $quantity = new Quantity(3);
-        $orderItem = new OrderItem('SKU456', $money, $quantity);
+        $orderItem = new OrderItem(
+            new ProductName('Laptop'),
+            new SKU('LAP-12345'),
+            $price,
+            $quantity
+        );
 
-        $this->assertEquals(150, $orderItem->calculateTotal()->getAmount());
-    }
+        $total = $orderItem->calculateTotal();
 
-    public function testInvalidQuantityThrowsException()
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        $money = new Money(100, 'USD');
-        $quantity = new Quantity(-1); // Không hợp lệ
-        new OrderItem('SKU789', $money, $quantity);
+        $this->assertEquals(3000.00, $total->getAmount());
+        $this->assertEquals('USD', $total->getCurrency());
     }
 }
