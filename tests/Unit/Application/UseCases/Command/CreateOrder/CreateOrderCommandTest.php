@@ -27,11 +27,16 @@ class CreateOrderCommandTest extends TestCase
     {
         // Arrange
         $command = new CreateOrderCommandRequest(
-            new FullName('John', 'Doe'),
-            new EmailAddress('john.doe@example.com'),
-            new PhoneNumber('+84', '123456789'),
-            new Address('123 Street', 'Hanoi', '10000', 'Vietnam'),
-            [] // Empty order items
+            customerName: new FullName(firstName: 'John', lastName: 'Doe'),
+            email: new EmailAddress(email: 'john.doe@example.com'),
+            phone: new PhoneNumber(countryCode: '+84', number: '123456789'),
+            address: new Address(
+                street: '123 Street',
+                city: 'Hanoi',
+                zipcode: '10000',
+                country: 'Vietnam'
+            ),
+            items: []
         );
 
         // Assert repository save will be called
@@ -39,10 +44,10 @@ class CreateOrderCommandTest extends TestCase
             ->method('save')
             ->with($this->isInstanceOf(OrderAggregate::class));
 
-        $handler = new CreateOrderHandler($this->repositoryMock);
+        $handler = new CreateOrderHandler(repository: $this->repositoryMock);
 
         // Act
-        $handler->handle($command);
+        $handler->handle(command: $command);
 
         // Assert: No exceptions thrown, test passes.
         $this->assertTrue(true);
@@ -55,11 +60,16 @@ class CreateOrderCommandTest extends TestCase
 
         // Arrange
         new CreateOrderCommandRequest(
-            new FullName('John', 'Doe'),
-            new EmailAddress('invalid-email'),
-            new PhoneNumber('+84', '123456789'),
-            new Address('123 Street', 'Hanoi', '10000', 'Vietnam'),
-            [] // Empty order items
+            customerName: new FullName(firstName: 'John', lastName: 'Doe'),
+            email: new EmailAddress(email: 'invalid-email'),
+            phone: new PhoneNumber(countryCode: '+84', number: '123456789'),
+            address: new Address(
+                street: '123 Street',
+                city: 'Hanoi',
+                zipcode: '10000',
+                country: 'Vietnam'
+            ),
+            items: []
         );
 
         // Act: Exception should be thrown.
@@ -72,11 +82,16 @@ class CreateOrderCommandTest extends TestCase
 
         // Arrange
         new CreateOrderCommandRequest(
-            new FullName('John', 'Doe'),
-            new EmailAddress('john.doe@example.com'),
-            new PhoneNumber('+84', '123'),
-            new Address('123 Street', 'Hanoi', '10000', 'Vietnam'),
-            []
+            customerName: new FullName(firstName: 'John', lastName: 'Doe'),
+            email: new EmailAddress(email: 'john.doe@example.com'),
+            phone: new PhoneNumber(countryCode: '+84', number: '123'),
+            address: new Address(
+                street: '123 Street',
+                city: 'Hanoi',
+                zipcode: '10000',
+                country: 'Vietnam'
+            ),
+            items: []
         );
 
         // Act: Exception should be thrown.
