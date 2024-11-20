@@ -93,3 +93,189 @@ class UpdateOrderCommandTest extends TestCase
         $this->handler->handle($command);
     }
 }
+/* Việc thực hiện validation trong constructor của UpdateOrderCommandRequest có thể khiến nó trở nên quá tải và vi phạm Single Responsibility Principle (SRP).
+
+Dưới đây là cách tiếp cận tốt hơn để xử lý vấn đề này:
+
+1. Xử lý validation ở lớp chuyên biệt
+
+a. Tạo lớp chuyên trách cho việc xác thực: UpdateOrderValidator
+
+Chúng ta tạo một lớp riêng để thực hiện việc kiểm tra tính hợp lệ của dữ liệu đầu vào.
+
+namespace Qtvhao\OrderModule\Application\Validators;
+
+use InvalidArgumentException;
+
+class UpdateOrderValidator
+{
+    public function validate(string $newStatus): void
+    {
+        $validStatuses = ['pending', 'shipped', 'delivered', 'canceled'];
+
+        if (!in_array($newStatus, $validStatuses, true)) {
+            throw new InvalidArgumentException("Invalid status: {$newStatus}");
+        }
+    }
+}
+
+b. Sửa đổi UpdateOrderCommandRequest
+
+Giữ UpdateOrderCommandRequest đơn giản chỉ làm nhiệm vụ lưu trữ dữ liệu, không thực hiện validation.
+
+namespace Qtvhao\OrderModule\Application\UseCases\Command\UpdateOrder;
+
+class UpdateOrderCommandRequest
+{
+    private string $orderId;
+    private string $newStatus;
+
+    public function __construct(string $orderId, string $newStatus)
+    {
+        $this->orderId = $orderId;
+        $this->newStatus = $newStatus;
+    }
+
+    public function getOrderId(): string
+    {
+        return $this->orderId;
+    }
+
+    public function getNewStatus(): string
+    {
+        return $this->newStatus;
+    }
+}
+
+c. Sửa đổi UpdateOrderHandler để sử dụng validator
+
+Sử dụng lớp UpdateOrderValidator trong UpdateOrderHandler để kiểm tra tính hợp lệ của newStatus.
+
+namespace Qtvhao\OrderModule\Application\UseCases\Command\UpdateOrder;
+
+use Qtvhao\OrderModule\Application\Interfaces\Repositories\OrderCommandRepositoryInterface;
+use Qtvhao\OrderModule\Application\Exceptions\OrderNotFoundException;
+use Qtvhao\OrderModule\Application\Validators\UpdateOrderValidator;
+use Qtvhao\OrderModule\Domain\ValueObjects\OrderStatus;
+
+class UpdateOrderHandler
+{
+    private OrderCommandRepositoryInterface $repository;
+    private UpdateOrderValidator $validator;
+
+    public function __construct(
+        OrderCommandRepositoryInterface $repository,
+        UpdateOrderValidator $validator
+    ) {
+        $this->repository = $repository;
+        $this->validator = $validator;
+    }
+
+    public function handle(UpdateOrderCommandRequest $command): void
+    {
+        // Validate input
+        $this->validator->validate($command->getNewStatus());
+
+        // Find the order
+        $order = $this->repository->findForUpdate($command->getOrderId());
+
+        if (!$order) {
+            throw new OrderNotFoundException("Order not found.");
+        }
+
+        // Update order status
+        $status = OrderStatus::fromString($command->getNewStatus());
+        $order->changeStatus($status);
+
+        // Save updated order
+        $this->repository->save($order);
+    }
+}
+
+2. Cập nhật Unit Test
+
+a. Test cập nhật thành công
+
+Test này không cần thay đổi nhiều.
+
+public function testUpdateOrderSuccessfully()
+{
+    $orderId = 'order-123';
+    $newStatus = 'shipped';
+    $orderMock = $this->createMock(OrderAggregate::class);
+    $repositoryMock = $this->createMock(OrderCommandRepositoryInterface::class);
+    $validatorMock = $this->createMock(UpdateOrderValidator::class);
+
+    // Giả lập: Validator không ném ngoại lệ
+    $validatorMock->expects($this->once())->method('validate')->with($newStatus);
+
+    // Giả lập: Repository trả về đơn hàng
+    $repositoryMock->method('findForUpdate')->with($orderId)->willReturn($orderMock);
+
+    // Giả lập: Gọi changeStatus và save
+    $orderMock->expects($this->once())->method('changeStatus')->with($newStatus);
+    $repositoryMock->expects($this->once())->method('save')->with($orderMock);
+
+    $handler = new UpdateOrderHandler($repositoryMock, $validatorMock);
+    $command = new UpdateOrderCommandRequest($orderId, $newStatus);
+
+    $handler->handle($command);
+
+    $this->assertTrue(true); // Đảm bảo không có ngoại lệ
+}
+
+b. Test ném ngoại lệ khi dữ liệu không hợp lệ
+
+public function testUpdateOrderFailsWithInvalidData()
+{
+    $orderId = 'order-123';
+    $invalidStatus = 'invalid-status';
+    $repositoryMock = $this->createMock(OrderCommandRepositoryInterface::class);
+    $validatorMock = $this->createMock(UpdateOrderValidator::class);
+
+    // Giả lập: Validator ném ngoại lệ
+    $validatorMock->method('validate')->with($invalidStatus)->willThrowException(new InvalidArgumentException());
+
+    $handler = new UpdateOrderHandler($repositoryMock, $validatorMock);
+    $command = new UpdateOrderCommandRequest($orderId, $invalidStatus);
+
+    $this->expectException(InvalidArgumentException::class);
+
+    $handler->handle($command);
+}
+
+c. Test ném ngoại lệ khi không tìm thấy đơn hàng
+
+public function testUpdateOrderFailsWhenOrderNotFound()
+{
+    $orderId = 'order-404';
+    $newStatus = 'shipped';
+    $repositoryMock = $this->createMock(OrderCommandRepositoryInterface::class);
+    $validatorMock = $this->createMock(UpdateOrderValidator::class);
+
+    // Giả lập: Validator không ném ngoại lệ
+    $validatorMock->method('validate')->with($newStatus);
+
+    // Giả lập: Repository trả về null (không tìm thấy đơn hàng)
+    $repositoryMock->method('findForUpdate')->with($orderId)->willReturn(null);
+
+    $handler = new UpdateOrderHandler($repositoryMock, $validatorMock);
+    $command = new UpdateOrderCommandRequest($orderId, $newStatus);
+
+    $this->expectException(OrderNotFoundException::class);
+
+    $handler->handle($command);
+}
+
+3. Kết quả
+
+	•	Ưu điểm của cách làm mới:
+	•	Constructor của UpdateOrderCommandRequest chỉ lưu dữ liệu, không thực hiện logic phức tạp.
+	•	Validation được tách biệt trong UpdateOrderValidator, dễ dàng kiểm tra và tái sử dụng.
+	•	Mã nguồn tuân thủ Single Responsibility Principle.
+	•	Kết quả chạy test:
+	•	Chạy PHPUnit và đảm bảo toàn bộ test case đều pass:
+
+php artisan test --filter=UpdateOrderCommandTest
+
+Tất cả test case nên pass và hệ thống đã được cấu trúc lại tốt hơn. */
